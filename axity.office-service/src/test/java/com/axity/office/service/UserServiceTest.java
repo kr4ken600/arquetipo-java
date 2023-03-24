@@ -7,6 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+
+import org.h2.command.ddl.CreateRole;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,10 +22,12 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.axity.office.commons.dto.RoleDto;
 import com.axity.office.commons.dto.UserDto;
 import com.axity.office.commons.enums.ErrorCode;
 import com.axity.office.commons.exception.BusinessException;
 import com.axity.office.commons.request.PaginatedRequestDto;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
 /**
  * Class UserServiceTest
@@ -85,11 +90,22 @@ class UserServiceTest
    * {@link com.axity.office.service.impl.UserServiceImpl#create(com.axity.office.commons.dto.UserDto)}.
    */
   @Test
-  @Disabled("TODO: Actualizar la prueba de acuerdo a la entidad")
+  // @Disabled("TODO: Actualizar la prueba de acuerdo a la entidad")
   void testCreate()
   {
-    var dto = new UserDto();
     // Crear de acuerdo a la entidad
+    var dto = new UserDto();
+    var roles = new ArrayList<RoleDto>();
+
+    roles.add(createRole(1));
+    roles.add(createRole(2));
+    
+    dto.setUsername("test1");
+    dto.setEmail("test@test.com");
+    dto.setName("test");
+    dto.setLastName("ortiz");
+    dto.setRoles(roles);
+
 
     var response = this.userService.create( dto );
     assertNotNull( response );
@@ -99,6 +115,102 @@ class UserServiceTest
     this.userService.delete( dto.getId() );
   }
 
+  private RoleDto createRole(int id){
+    var role = new RoleDto();
+    role.setId(id); 
+    return role;
+  }
+
+  /**
+   * Method to validate if a username exists
+   */
+  @Test
+  void testCreate_NameUsed(){
+    var dto = new UserDto();
+    var roles = new ArrayList<RoleDto>();
+
+    roles.add(createRole(1));
+    roles.add(createRole(2));
+    
+    dto.setUsername("guy.stark");
+    dto.setEmail("test@test.com");
+    dto.setName("test");
+    dto.setLastName("ortiz");
+    dto.setRoles(roles);
+
+    var response = this.userService.create( dto );
+
+    assertEquals( 401, response.getHeader().getCode() );
+    assertEquals( "Username en uso", response.getHeader().getMessage() );
+    assertNull( response.getBody() );
+  }
+
+  /**
+   * Method to validate if a email exists
+   */
+  @Test
+  void testCreate_EmailUsed(){
+    var dto = new UserDto();
+    var roles = new ArrayList<RoleDto>();
+
+    roles.add(createRole(1));
+    roles.add(createRole(2));
+    
+    dto.setUsername("test1");
+    dto.setEmail("guy.stark@company.net");
+    dto.setName("test");
+    dto.setLastName("ortiz");
+    dto.setRoles(roles);
+
+    var response = this.userService.create( dto );
+
+    assertEquals( 401, response.getHeader().getCode() );
+    assertEquals( "Correo en uso", response.getHeader().getMessage() );
+    assertNull( response.getBody() );
+  }
+
+  /**
+   * Method to validate if the idrole does not exist
+   */
+  @Test
+  void testCreate_RoleNotExist(){
+    var dto = new UserDto();
+    var roles = new ArrayList<RoleDto>();
+
+    roles.add(createRole(10));
+    
+    dto.setUsername("test1");
+    dto.setEmail("test@company.net");
+    dto.setName("test");
+    dto.setLastName("ortiz");
+    dto.setRoles(roles);
+
+    var response = this.userService.create( dto );
+
+    assertEquals( 401, response.getHeader().getCode() );
+    assertEquals( "Uno o mas roles no existe", response.getHeader().getMessage() );
+    assertNull( response.getBody() );
+  }
+
+  /**
+   * Method to validate if the idrole is null
+   */
+  @Test
+  void testCreate_RoleNull(){
+    var dto = new UserDto();
+    
+    dto.setUsername("test1");
+    dto.setEmail("test@company.net");
+    dto.setName("test");
+    dto.setLastName("ortiz");
+    LOG.info("DataUser {}", dto.getRoles());
+    var response = this.userService.create( dto );
+
+    assertEquals( 401, response.getHeader().getCode() );
+    assertEquals( "Rol necesario", response.getHeader().getMessage() );
+    assertNull( response.getBody() );
+  }
+
   /**
    * Method to validate update
    */
@@ -106,8 +218,8 @@ class UserServiceTest
   @Disabled("TODO: Actualizar la prueba de acuerdo a la entidad")
   void testUpdate()
   {
+    //actualizar de acuerdo a la entidad
     var user = this.userService.find( 1 ).getBody();
-    // TODO: actualizar de acuerdo a la entidad
 
     var response = this.userService.update( user );
 

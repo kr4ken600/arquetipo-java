@@ -19,10 +19,13 @@ import com.axity.office.commons.exception.BusinessException;
 import com.axity.office.commons.request.MessageDto;
 import com.axity.office.commons.request.PaginatedRequestDto;
 import com.axity.office.commons.response.GenericResponseDto;
+import com.axity.office.commons.response.HeaderDto;
 import com.axity.office.commons.response.PaginatedResponseDto;
 import com.axity.office.model.UserDO;
 import com.axity.office.model.QUserDO;
+import com.axity.office.model.RoleDO;
 import com.axity.office.persistence.UserPersistence;
+import com.axity.office.persistence.RolePersistence;
 import com.axity.office.service.UserService;
 import com.github.dozermapper.core.Mapper;
 import com.google.gson.Gson;
@@ -44,6 +47,9 @@ public class UserServiceImpl implements UserService
 {
   @Autowired
   private UserPersistence userPersistence;
+
+  @Autowired
+  private RolePersistence rolePersistence;
 
   @Autowired
   private Mapper mapper;
@@ -92,10 +98,45 @@ public class UserServiceImpl implements UserService
   @Override
   public GenericResponseDto<UserDto> create( UserDto dto )
   {
+    GenericResponseDto<UserDto> genericResponseDto = new GenericResponseDto<>();
+    // Usuario unico
+    if (userPersistence.findByUsername(dto.getUsername()).isPresent()) {
+      genericResponseDto.setHeader(new HeaderDto(401, "Username en uso"));
+
+      return genericResponseDto;
+    }
+    // Correo existente
+    if ( userPersistence.findByEmail(dto.getEmail()).isPresent()){
+      genericResponseDto.setHeader(new HeaderDto(401, "Correo en uso"));
+
+      return genericResponseDto;
+    }
+    // Rol nulo
+    if(dto.getRoles() == null){
+      genericResponseDto.setHeader(new HeaderDto(401, "Rol necesario"));
+
+      return genericResponseDto;
+    }
 
     UserDO entity = new UserDO();
     this.mapper.map( dto, entity );
     entity.setId(null);
+
+    var roles = new ArrayList<RoleDO>();
+    entity.setRoles(roles);
+
+    dto.getRoles().stream().forEach(r->{
+      // Comprobar si el idRol existe
+      if(this.rolePersistence.findById(r.getId()).isPresent()){
+        entity.getRoles().add(this.rolePersistence.findById(r.getId()).get());
+      }
+    });
+    // IDRol inexistente
+    if(entity.getRoles().size() != dto.getRoles().size()){
+      genericResponseDto.setHeader(new HeaderDto(401, "Uno o mas roles no existe"));
+
+      return genericResponseDto;
+    }
 
     this.userPersistence.save( entity );
 
