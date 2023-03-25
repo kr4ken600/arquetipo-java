@@ -112,7 +112,7 @@ public class UserServiceImpl implements UserService
       return genericResponseDto;
     }
     // Rol nulo
-    if(dto.getRoles() == null){
+    if(dto.getRoles() == null  || dto.getRoles().isEmpty()){
       genericResponseDto.setHeader(new HeaderDto(401, "Rol necesario"));
 
       return genericResponseDto;

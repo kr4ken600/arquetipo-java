@@ -193,6 +193,27 @@ class UserServiceTest
   }
 
   /**
+   * Method to validate if the idrole is empty
+   */
+  @Test
+  void testCreate_RoleEmpty(){
+    var dto = new UserDto();
+    var roles = new ArrayList<RoleDto>();
+    
+    dto.setUsername("test1");
+    dto.setEmail("test@company.net");
+    dto.setName("test");
+    dto.setLastName("ortiz");
+    dto.setRoles(roles);
+
+    var response = this.userService.create( dto );
+
+    assertEquals( 401, response.getHeader().getCode() );
+    assertEquals( "Rol necesario", response.getHeader().getMessage() );
+    assertNull( response.getBody() );
+  }
+
+  /**
    * Method to validate if the idrole is null
    */
   @Test
